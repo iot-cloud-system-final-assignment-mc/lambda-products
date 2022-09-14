@@ -39,7 +39,8 @@ module.exports.upsertProduct = async (event, context) => {
                 ':name': body.name,
                 ':price': body.price,
                 ':updated_at': updated_at
-            }
+            },
+            ReturnValues: 'ALL_NEW'
         };
 
         const result = await dynamoDb.update(params).promise();
