@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  UtilsLayerArn:
+    Type: String
+    Description: ARN of the Utils layer
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    MemorySize: 1024
+    Timeout: 15
+    Layers:
+      - !Ref UtilsLayerArn
+
+Resources:
+  # Functions
+  GetProducts:
+    Type: AWS::Serverless::Function
+    DependsOn: GetProductsLambdaExecutionRole
+    Properties:
+      FunctionName: GetProducts
+      Handler: ./code/index.getProducts
+      Role: !GetAtt GetProductsLambdaExecutionRole.Arn
+    
+  UpsertProduct:
+    Type: AWS::Serverless::Function
+    DependsOn: UpsertProductLambdaExecutionRole
+    Properties:
+      FunctionName: UpsertProduct
+      Handler: ./code/index.upsertProduct
+      Role: !GetAtt UpsertProductLambdaExecutionRole.Arn
+  
+  DeleteProduct:
+    Type: AWS::Serverless::Function
+    DependsOn: DeleteProductLambdaExecutionRole
+    Properties:
+      FunctionName: DeleteProduct
+      Handler: ./code/index.deleteProduct
+      Role: !GetAtt DeleteProductLambdaExecutionRole.Arn
+
+  # Roles
+  GetProductsLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: iot-get-products-role
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy    
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: iot-get-products-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:Query
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Products
+
+  UpsertProductLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: iot-upsert-product-role
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy    
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: iot-upsert-product-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - dynamodb:UpdateItem
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Products
+
+  DeleteProductLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: iot-delete-product-role
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy    
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: iot-delete-product-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - dynamodb:DeleteItem
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Products
