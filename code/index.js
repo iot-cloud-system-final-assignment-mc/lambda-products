@@ -19,6 +19,7 @@ module.exports.getProducts = async (event, context) => {
 
 module.exports.upsertProduct = async (event, context) => {
     try {
+        const { v4: uuidv4 } = require('uuid');
         const body = JSON.parse(event["body"]);
         const id = body.product_id || uuidv4();
         const updated_at = Date.now();
